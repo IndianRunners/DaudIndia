@@ -1,0 +1,219 @@
+import { AthleteTabs } from '@/components/coach-nav/athlete-tabs';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { FinderProvider } from '@/contexts/finder';
+import { SpaceConsumer, SpaceProvider } from '@/contexts/space';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { PageActionsProvider } from '@/hooks/use-page-actions';
+import { usePendingClubJoin } from '@/hooks/use-pending-club-join';
+import { usePendingCoachJoin } from '@/hooks/use-pending-coach-join';
+import { m } from '@/paraglide/messages';
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { Calendar, FileText, Folder, StickyNote } from 'lucide-react';
+
+import { EVENT_TYPE, Event } from '@openathlete/shared';
+
+import {
+  SharedDndProvider,
+  useSharedDnd,
+} from '../calendar/contexts/shared-dnd-context';
+import { TemplateLibrarySidebarProvider } from '../calendar/contexts/template-library-sidebar-context';
+import { TemplateLibrarySidebar } from '../calendar/template-library-sidebar';
+import { calendarCollisionDetection } from '../calendar/utils/link-drop';
+import { ChatBubble, ChatWindow } from '../chatbot';
+import {
+  DraggableData,
+  DraggableType,
+} from '../create-event-from-template-dialog/dnd-types';
+import { AppBarProvider } from '../mobile/app-bar-provider';
+import { AppShell } from '../mobile/app-shell';
+import { PlanImportHandler } from '../plan-import-handler';
+import { AppSidebar } from '../sidebar/app-sidebar';
+import { SportIcon } from '../sport-icon/sport-icon';
+
+interface P {
+  children: React.ReactNode;
+}
+
+function LayoutContent({ children }: P) {
+  const { onDragStart, onDragEnd, activeItem } = useSharedDnd() || {};
+  const isMobile = useIsMobile();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor),
+  );
+
+  // Get the drag overlay content based on the active item
+  const getDragOverlayContent = () => {
+    if (!activeItem) return null;
+
+    const activeData = activeItem.data.current as DraggableData | undefined;
+
+    // Template being dragged
+    if (activeData?.type === DraggableType.TEMPLATE && activeData.template) {
+      const event = activeData.template.event;
+      const isTrainingOrCompetition =
+        event?.type === EVENT_TYPE.TRAINING ||
+        event?.type === EVENT_TYPE.COMPETITION;
+
+      return (
+        <div className="bg-card px-3 py-2.5 rounded-xl shadow-2xl border border-border/50 cursor-grabbing animate-in zoom-in-95 duration-150">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+              {isTrainingOrCompetition && event && 'sport' in event ? (
+                <SportIcon sport={event.sport} className="h-4 w-4" />
+              ) : (
+                <FileText className="h-4 w-4 text-primary" />
+              )}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium text-sm truncate max-w-[180px]">
+                {event?.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {m.ui_template()}{' '}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Folder being dragged
+    if (activeData?.type === DraggableType.FOLDER && activeData.folder) {
+      return (
+        <div className="bg-card px-3 py-2.5 rounded-xl shadow-2xl border border-border/50 cursor-grabbing animate-in zoom-in-95 duration-150">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex items-center justify-center w-7 h-7 rounded-lg"
+              style={{
+                backgroundColor: `${activeData.folder.color || '#6366f1'}20`,
+              }}
+            >
+              <Folder
+                className="h-4 w-4"
+                style={{ color: activeData.folder.color || '#6366f1' }}
+              />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium text-sm truncate max-w-[180px]">
+                {activeData.folder.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {m.ui_folder()}{' '}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Calendar event being dragged
+    const eventData = activeItem.data.current as
+      { type: 'event'; event: Event } | undefined;
+    if (eventData?.type === 'event' && eventData.event) {
+      const event = eventData.event;
+      const isTrainingOrCompetition =
+        event.type === EVENT_TYPE.TRAINING ||
+        event.type === EVENT_TYPE.COMPETITION;
+      const isNote = event.type === EVENT_TYPE.NOTE;
+      const isActivity = event.type === EVENT_TYPE.ACTIVITY;
+
+      return (
+        <div className="bg-card px-3 py-2.5 rounded-xl shadow-2xl border border-border/50 cursor-grabbing animate-in zoom-in-95 duration-150 max-w-[240px]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+              {(isTrainingOrCompetition || isActivity) && 'sport' in event ? (
+                <SportIcon sport={event.sport} className="h-4 w-4" />
+              ) : isNote ? (
+                <StickyNote className="h-4 w-4 text-amber-500" />
+              ) : (
+                <Calendar className="h-4 w-4 text-primary" />
+              )}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="font-medium text-sm truncate">{event.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {isActivity
+                  ? m.calendar_link_drag_hint()
+                  : isTrainingOrCompetition
+                    ? m.event_type_session()
+                    : isNote
+                      ? 'Note'
+                      : m.event_type_event()}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={calendarCollisionDetection}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+    >
+      {!isMobile && <AppSidebar />}
+      <SpaceConsumer>
+        {isMobile ? (
+          <PageActionsProvider>
+            <AppBarProvider>
+              <AppShell>{children}</AppShell>
+              <TemplateLibrarySidebar />
+            </AppBarProvider>
+          </PageActionsProvider>
+        ) : (
+          <>
+            <div className="flex min-w-0 flex-1 bg-background md:my-2 md:mr-2 md:overflow-hidden md:rounded-xl">
+              <TemplateLibrarySidebar />
+              <SidebarInset className="min-w-0 flex-1">
+                <AthleteTabs />
+                {children}
+              </SidebarInset>
+            </div>
+            <ChatBubble />
+            <ChatWindow />
+          </>
+        )}
+      </SpaceConsumer>
+      <PlanImportHandler />
+      <DragOverlay dropAnimation={null} style={{ cursor: 'grabbing' }}>
+        {getDragOverlayContent()}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+export function DashboardLayout({ children }: P) {
+  // A join link opened before signing in, onboarding included
+  usePendingCoachJoin();
+  usePendingClubJoin();
+  return (
+    <SpaceProvider>
+      <SidebarProvider>
+        <TemplateLibrarySidebarProvider>
+          <SharedDndProvider>
+            <FinderProvider>
+              <LayoutContent>{children}</LayoutContent>
+            </FinderProvider>
+          </SharedDndProvider>
+        </TemplateLibrarySidebarProvider>
+      </SidebarProvider>
+    </SpaceProvider>
+  );
+}
