@@ -22,6 +22,10 @@ DaudIndia is the ideas hub of IndianRunners: open-source apps, tools and experim
 
 The repo's first project is live: [the running glossary](GLOSSARY.md), 129 running terms from training jargon to ultra slang, in plain language. It is open for contributions, so add the terms you had to learn the hard way.
 
+## Second project: Finisher Studio
+
+[Finisher Studio](https://indianrunners.github.io/DaudIndia/finisher-studio/) is a free finisher card and keepsake bib generator. Type your own name, event, distance and finish time, and it draws two downloadable PNG keepsakes right in your browser - no sign-up, no server, and your details never leave the page. Keepsakes are original designs, clearly marked unofficial: they are mementos, not official race certificates or proof of result. The whole tool is one file at [finisher-studio/index.html](finisher-studio/index.html).
+
 ## The ideas
 
 Ideas live in the [issue tracker](https://github.com/IndianRunners/DaudIndia/issues) so each one gets its own discussion. First ideas landing soon.
