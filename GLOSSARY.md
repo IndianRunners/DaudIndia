@@ -1,6 +1,6 @@
 # The Running Glossary
 
-Every running term you will meet, from your first easy run to a 100-miler, in plain language. Written from an Indian runner's point of view; the terms themselves are global.
+A working glossary of running: 129 terms, from your first easy run to a 100-miler, in plain language. Written from an Indian runner's point of view; the terms themselves are global.
 
 ## Training runs
 
