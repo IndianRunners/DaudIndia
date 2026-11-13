@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DaudIndia Finisher Studio - free finisher card &amp; keepsake bib generator</title>
+<meta name="description" content="Make a free, unofficial finisher certificate and keepsake bib from your own race details. No sign-up, no server, your data never leaves your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#17171b; --ink2:#232329; --paper:#fbf7ef; --paper2:#f3eee2;
+    --blue:#2545ff; --amber:#ffb000; --muted:#8a8a93; --line:#34343c;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    background:var(--ink); color:var(--paper);
+    font-family:Archivo, system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height:100vh;
+  }
+  header{
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+    padding:28px 32px 8px;
+  }
+  .mark{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:13px; letter-spacing:.18em;
+    color:var(--ink); background:var(--amber); padding:5px 10px; border-radius:4px; font-weight:700;
+  }
+  h1{font-size:26px; font-weight:800; letter-spacing:-.01em}
+  header .sub{font-family:"IBM Plex Mono", monospace; font-size:12.5px; color:var(--muted); letter-spacing:.06em}
+  main{display:grid; grid-template-columns:380px 1fr; gap:24px; padding:24px 32px 32px; align-items:start}
+  @media (max-width:980px){ main{grid-template-columns:1fr} }
+  .card{background:var(--ink2); border:1px solid var(--line); border-radius:14px; padding:22px}
+  .card h2{font-size:13px; font-family:"IBM Plex Mono", monospace; letter-spacing:.14em; color:var(--muted); font-weight:500; margin-bottom:16px}
+  label{display:block; font-size:12.5px; font-weight:700; letter-spacing:.05em; margin:14px 0 6px; color:#cfcfd6}
+  input,select{
+    width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
+    border-radius:8px; padding:10px 12px; font-size:14.5px; font-family:inherit; outline:none;
+  }
+  input:focus,select:focus{border-color:var(--blue)}
+  .row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+  .hint{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.45}
+  .tabs{display:flex; gap:8px; margin-bottom:16px}
+  .tab{
+    font-family:"IBM Plex Mono", monospace; font-size:12.5px; letter-spacing:.1em; font-weight:700;
+    background:transparent; color:var(--muted); border:1px solid var(--line);
+    padding:8px 16px; border-radius:999px; cursor:pointer;
+  }
+  .tab.on{background:var(--paper); color:var(--ink); border-color:var(--paper)}
+  .previewwrap{background:var(--paper2); border-radius:10px; padding:14px; display:flex; justify-content:center}
+  canvas{width:100%; max-width:980px; height:auto; display:block; border-radius:4px; box-shadow:0 6px 30px rgba(0,0,0,.35)}
+  .actions{display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap}
+  .dl{
+    background:var(--blue); color:#fff; border:0; border-radius:8px; padding:11px 20px;
+    font-size:14px; font-weight:800; letter-spacing:.02em; cursor:pointer;
+  }
+  .dl:hover{filter:brightness(1.12)}
+  .note{font-size:12px; color:var(--muted)}
+  footer{padding:0 32px 34px; font-family:"IBM Plex Mono", monospace; font-size:11.5px; color:var(--muted); line-height:1.7; letter-spacing:.03em}
+  body.export{background:#fff; margin:0}
+  body.export header, body.export main, body.export footer{display:none}
+  body.export #stage{display:block; margin:0; width:auto; max-width:none; height:auto}
+  #stage{display:none}
+</style>
+</head>
+<body>
+<header>
+  <span class="mark">DAUDINDIA</span>
+  <h1>Finisher Studio</h1>
+  <span class="sub">FREE FINISHER CARD + KEEPSAKE BIB GENERATOR</span>
+</header>
+
+<main>
+  <section class="card" id="formcard">
+    <h2>YOUR RESULT - TYPE IT YOURSELF</h2>
+    <label for="name">Runner name</label>
+    <input id="name" maxlength="40" placeholder="e.g. Aarav Shah" autocomplete="off">
+    <label for="event">Event name</label>
+    <input id="event" maxlength="48" placeholder="e.g. Nehru Park Monsoon 10K" autocomplete="off">
+    <label for="date">Event date</label>
+    <input id="date" type="date">
+    <label>Distance</label>
+    <select id="dist">
+      <option value="5K">5K</option>
+      <option value="10K" selected>10K</option>
+      <option value="21.1K">21.1K (Half Marathon)</option>
+      <option value="42.2K">42.2K (Marathon)</option>
+      <option value="custom">Custom distance</option>
+    </select>
+    <div id="customwrap" style="display:none">
+      <label for="customdist">Custom distance (km)</label>
+      <input id="customdist" inputmode="decimal" maxlength="6" placeholder="e.g. 15">
+    </div>
+    <label>Finish time (hh : mm : ss)</label>
+    <div class="row">
+      <input id="th" inputmode="numeric" maxlength="2" placeholder="00">
+      <input id="tm" inputmode="numeric" maxlength="2" placeholder="47">
+      <input id="ts" inputmode="numeric" maxlength="2" placeholder="32">
+    </div>
+    <label for="bibno">Bib number (optional)</label>
+    <input id="bibno" maxlength="6" placeholder="e.g. 1047" autocomplete="off">
+    <p class="hint">Everything stays in your browser. No account, no upload, no server.
+    This makes an <b>unofficial keepsake</b> - it is not an official race certificate and not valid proof of result.</p>
+  </section>
+
+  <section>
+    <div class="tabs">
+      <button class="tab on" id="tabcert" type="button">FINISHER CARD</button>
+      <button class="tab" id="tabbib" type="button">KEEPSAKE BIB</button>
+    </div>
+    <div class="previewwrap" id="wrapcert"><canvas id="cert" width="1920" height="1357"></canvas></div>
+    <div class="previewwrap" id="wrapbib" style="display:none"><canvas id="bib" width="1200" height="760"></canvas></div>
+    <div class="actions">
+      <button class="dl" id="dl" type="button">Download PNG</button>
+      <span class="note">Full-resolution PNG, free to share or print. Marked unofficial on the design itself.</span>
+    </div>
+  </section>
+</main>
+
+<canvas id="stage"></canvas>
+
+<footer>
+  DAUDINDIA FINISHER STUDIO · AN INDIANRUNNERS COMMUNITY PROJECT · YOUR DETAILS NEVER LEAVE THIS PAGE ·
+  KEEPSAKES ARE UNOFFICIAL AND USE ORIGINAL ARTWORK ONLY - NO EVENT LOGOS, NO OFFICIAL BIB DESIGNS, NO TIMING-PARTNER DATA.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var certC = $("cert"), bibC = $("bib"), stage = $("stage");
+  var active = "cert";
+
+  var params = new URLSearchParams(location.search);
+  var DEMO = params.get("demo") === "1";
+  var EXPORT = params.get("export"); // "cert" | "bib"
+  if (params.get("tab") === "bib") active = "bib";
+
+  var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+  function data(){
+    var d = $("date").value ? new Date($("date").value + "T00:00:00") : null;
+    var dateStr = d ? String(d.getDate()).padStart(2,"0") + " " + MONTHS[d.getMonth()] + " " + d.getFullYear() : "";
+    var dist = $("dist").value === "custom" ? (($("customdist").value || "").replace(/[^0-9.]/g,"") + "K") : $("dist").value;
+    var h = ($("th").value || "0").replace(/\D/g,""), m = ($("tm").value || "0").replace(/\D/g,""), s = ($("ts").value || "0").replace(/\D/g,"");
+    var time = h.padStart(2,"0") + ":" + m.padStart(2,"0") + ":" + s.padStart(2,"0");
+    return {
+      name: ($("name").value || "YOUR NAME").trim(),
+      event: ($("event").value || "YOUR EVENT").trim(),
+      date: dateStr || "RACE DAY",
+      dist: dist,
+      time: time,
+      bib: ($("bibno").value || "").replace(/[^0-9A-Za-z-]/g,"") || "000"
+    };
+  }
+
+  // ---------- shared drawing helpers ----------
+  function checker(ctx, x, y, w, h, size){
+    var cols = Math.ceil(w/size), rows = Math.ceil(h/size);
+    for (var r=0;r<rows;r++) for (var c=0;c<cols;c++){
+      ctx.fillStyle = (r+c)%2 ? "#17171b" : "#fbf7ef";
+      ctx.fillRect(x+c*size, y+r*size, size, size);
+    }
+  }
+  function contours(ctx, w, h, color){
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.globalAlpha = .55;
+    for (var i=0;i<7;i++){
+      ctx.beginPath();
+      var yy = h*0.16 + i*(h*0.115);
+      ctx.moveTo(-40, yy);
+      for (var x=0;x<=w+80;x+=160){
+        ctx.quadraticCurveTo(x-80, yy + Math.sin((x+i*97)/230)*46 + (i%2?26:-26), x, yy + Math.cos((x+i*61)/310)*24);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function fitFont(ctx, text, weight, startPx, maxW, family){
+    var px = startPx;
+    while (px > 24){
+      ctx.font = weight + " " + px + "px " + family;
+      if (ctx.measureText(text).width <= maxW) break;
+      px -= 6;
+    }
+    return px;
+  }
+  function fitText(ctx, text, weight, startPx, maxW, family, minPx){
+    var px = startPx, min = minPx || 16, t = text;
+    while (px > min){
+      ctx.font = weight + " " + px + "px " + family;
+      if (ctx.measureText(t).width <= maxW) return {text: t, px: px};
+      px -= 4;
+    }
+    ctx.font = weight + " " + px + "px " + family;
+    while (t.length > 1 && ctx.measureText(t + "\u2026").width > maxW) t = t.slice(0, -1);
+    return {text: t.length < text.length ? t + "\u2026" : t, px: px};
+  }
+  function mono(px, w){ return (w||500) + " " + px + 'px "IBM Plex Mono", ui-monospace, monospace'; }
+  function disp(px, w){ return (w||900) + " " + px + 'px Archivo, system-ui, sans-serif'; }
+
+  // ---------- finisher card ----------
+  function drawCert(ctx, d){
+    var W = 1920, H = 1357;
+    ctx.fillStyle = "#fbf7ef"; ctx.fillRect(0,0,W,H);
+    contours(ctx, W, H, "#e6dfcf");
+    checker(ctx, 0, 0, W, 56, 28);
+    checker(ctx, 0, H-56, W, 56, 28);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#6b665a";
+    ctx.font = mono(34, 500);
+    ctx.save(); ctx.letterSpacing = "10px";
+    ctx.fillText("DAUDINDIA  ·  UNOFFICIAL FINISHER KEEPSAKE", W/2, 168);
+    ctx.restore();
+
+    // runner name, big
+    ctx.fillStyle = "#17171b";
+    var px = fitFont(ctx, d.name.toUpperCase(), 900, 210, W-240, "Archivo, system-ui, sans-serif");
+    ctx.font = disp(px, 900);
+    ctx.fillText(d.name.toUpperCase(), W/2, 196 + px*0.98);
+
+    var evLine = d.event.toUpperCase() + "  ·  " + d.date;
+    var evFit = fitText(ctx, evLine, 500, 44, W-220, '"IBM Plex Mono", ui-monospace, monospace', 24);
+    ctx.fillStyle = "#6b665a";
+    ctx.font = mono(evFit.px, 500);
+    ctx.fillText(evFit.text, W/2, 196 + px*0.98 + 92);
+
+    // finish-clock chip
+    var chipW = 760, chipH = 220, cx = (W-chipW)/2, cy = 640;
+    ctx.fillStyle = "#17171b";
+    roundRect(ctx, cx, cy, chipW, chipH, 26); ctx.fill();
+    ctx.strokeStyle = "#ffb000"; ctx.lineWidth = 3;
+    roundRect(ctx, cx+10, cy+10, chipW-20, chipH-20, 18); ctx.stroke();
+    ctx.fillStyle = "#ffb000";
+    ctx.font = mono(120, 700);
+    ctx.fillText(d.time, W/2, cy + 152);
+    ctx.fillStyle = "#8a8a93";
+    ctx.font = mono(28, 500);
+    ctx.save(); ctx.letterSpacing = "8px";
+    ctx.fillText("FINISH TIME", W/2, cy + chipH - 24);
+    ctx.restore();
+
+    // stat row
+    var stats = [["DISTANCE", d.dist], ["EVENT", d.event.toUpperCase()], ["DATE", d.date], ["BIB", d.bib.toUpperCase()]];
+    var sw = 400, gap = 26, total = stats.length*sw + (stats.length-1)*gap, x0 = (W-total)/2, sy = 890;
+    stats.forEach(function(st, i){
+      var x = x0 + i*(sw+gap);
+      ctx.fillStyle = "#ffffff";
+      roundRect(ctx, x, sy, sw, 170, 16); ctx.fill();
+      ctx.strokeStyle = "#ddd5c4"; ctx.lineWidth = 2;
+      roundRect(ctx, x, sy, sw, 170, 16); ctx.stroke();
+      ctx.fillStyle = "#6b665a"; ctx.font = mono(26, 500);
+      ctx.save(); ctx.letterSpacing = "6px";
+      ctx.fillText(st[0], x + sw/2, sy + 52); ctx.restore();
+      ctx.fillStyle = "#17171b";
+      var vFit = fitText(ctx, String(st[1]), 800, 52, sw-40, "Archivo, system-ui, sans-serif", 16);
+      ctx.font = disp(vFit.px, 800);
+      ctx.fillText(vFit.text, x + sw/2, sy + 122);
+    });
+
+    // stamp
+    ctx.save();
+    ctx.translate(W-315, H-165); ctx.rotate(-0.14);
+    ctx.strokeStyle = "#c2334d"; ctx.lineWidth = 5;
+    roundRect(ctx, -260, -92, 520, 150, 14); ctx.stroke();
+    ctx.fillStyle = "#c2334d";
+    ctx.font = mono(34, 700); ctx.fillText("UNOFFICIAL KEEPSAKE", 0, -28);
+    ctx.font = mono(22, 500); ctx.fillText("NOT AN OFFICIAL RACE CERTIFICATE", 0, 22);
+    ctx.restore();
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#6b665a"; ctx.font = mono(26, 400);
+    ctx.fillText("Runner-entered details · made free with DaudIndia Finisher Studio (IndianRunners)", 70, H - 96);
+  }
+
+  // ---------- keepsake bib ----------
+  function drawBib(ctx, d){
+    var W = 1200, H = 760;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = "#17171b"; ctx.lineWidth = 10; ctx.strokeRect(5,5,W-10,H-10);
+    checker(ctx, 14, 14, W-28, 44, 22);
+
+    // event band
+    ctx.fillStyle = "#17171b"; ctx.fillRect(14, 66, W-28, 96);
+    ctx.textAlign = "center"; ctx.fillStyle = "#fbf7ef";
+    var epx = fitFont(ctx, d.event.toUpperCase(), 800, 52, W-160, "Archivo, system-ui, sans-serif");
+    ctx.font = disp(epx, 800);
+    ctx.fillText(d.event.toUpperCase(), W/2, 128);
+    ctx.fillStyle = "#ffb000"; ctx.font = mono(26, 500);
+    ctx.fillText(d.date + "  ·  " + d.dist, W/2, 196 + 0); // small line under band? place below band
+    // bib number
+    ctx.fillStyle = "#17171b";
+    var bpx = fitFont(ctx, d.bib.toUpperCase(), 900, 300, W-220, "Archivo, system-ui, sans-serif");
+    ctx.font = disp(bpx, 900);
+    ctx.fillText(d.bib.toUpperCase(), W/2, 500);
+
+    ctx.fillStyle = "#2545ff";
+    ctx.font = disp(54, 800);
+    var npx = fitFont(ctx, d.name.toUpperCase(), 800, 54, W-220, "Archivo, system-ui, sans-serif");
+    ctx.font = disp(npx, 800);
+    ctx.fillText(d.name.toUpperCase(), W/2, 574);
+
+    ctx.fillStyle = "#6b665a"; ctx.font = mono(30, 500);
+    ctx.fillText("FINISH TIME " + d.time, W/2, 626);
+
+    // perforation + stub
+    ctx.strokeStyle = "#17171b"; ctx.lineWidth = 3; ctx.setLineDash([14,12]);
+    ctx.beginPath(); ctx.moveTo(24, 664); ctx.lineTo(W-24, 664); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#8a8a93"; ctx.font = mono(24, 500);
+    ctx.fillText("KEEPSAKE BIB · UNOFFICIAL · NOT VALID FOR RACE ENTRY", W/2, 716);
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function renderAll(){
+    var d = data();
+    drawCert(certC.getContext("2d"), d);
+    drawBib(bibC.getContext("2d"), d);
+    if (EXPORT){
+      var src = EXPORT === "bib" ? bibC : certC;
+      document.body.classList.add("export");
+      stage.width = src.width; stage.height = src.height;
+      stage.getContext("2d").drawImage(src, 0, 0);
+      stage.style.display = "block";
+    }
+  }
+
+  function setTab(t){
+    active = t;
+    $("tabcert").classList.toggle("on", t === "cert");
+    $("tabbib").classList.toggle("on", t === "bib");
+    $("wrapcert").style.display = t === "cert" ? "flex" : "none";
+    $("wrapbib").style.display = t === "bib" ? "flex" : "none";
+  }
+
+  $("tabcert").onclick = function(){ setTab("cert"); };
+  $("tabbib").onclick = function(){ setTab("bib"); };
+  $("dist").onchange = function(){
+    $("customwrap").style.display = $("dist").value === "custom" ? "block" : "none";
+  };
+  $("dl").onclick = function(){
+    var c = active === "cert" ? certC : bibC;
+    var a = document.createElement("a");
+    a.download = (active === "cert" ? "finisher-card" : "keepsake-bib") + ".png";
+    a.href = c.toDataURL("image/png");
+    a.click();
+  };
+  document.querySelectorAll("input,select").forEach(function(el){
+    el.addEventListener("input", renderAll);
+    el.addEventListener("change", renderAll);
+  });
+
+  if (DEMO){
+    $("name").value = "Aarav Shah";
+    $("event").value = "Nehru Park Monsoon 10K";
+    $("date").value = "2026-08-09";
+    $("dist").value = "10K";
+    $("th").value = "0"; $("tm").value = "47"; $("ts").value = "32";
+    $("bibno").value = "1047";
+  }
+  if (params.get("selftest") === "1"){
+    setTimeout(function(){
+      ["cert","bib"].forEach(function(which){
+        var c = which === "cert" ? certC : bibC;
+        var url = c.toDataURL("image/png");
+        var a = document.createElement("a");
+        a.download = (which === "cert" ? "finisher-card" : "keepsake-bib") + ".png";
+        a.href = url;
+        var ok = url.indexOf("data:image/png;base64,") === 0 && url.length > 20000;
+        var div = document.createElement("div");
+        div.id = "selftest-" + which;
+        div.textContent = "SELFTEST " + which + " ok=" + ok + " b64len=" + url.length + " filename=" + a.download + " dims=" + c.width + "x" + c.height;
+        document.body.appendChild(div);
+      });
+    }, 900);
+  }
+
+  setTab(active);
+
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(renderAll);
+  }
+  renderAll();
+  setTimeout(renderAll, 1200); // catch late webfont swap
+})();
+</script>
+</body>
+</html>
