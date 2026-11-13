@@ -18,6 +18,10 @@ DaudIndia is the ideas hub of IndianRunners: open-source apps, tools and experim
 | **In progress** | Someone started building. The work links out to its own repo. |
 | **Built** | Shipped and open source. |
 
+## First project: the running glossary
+
+The repo's first project is live: [the running glossary](GLOSSARY.md), every running term from training jargon to ultra slang, in plain language. It is open for contributions, so add the terms you had to learn the hard way.
+
 ## The ideas
 
 Ideas live in the [issue tracker](https://github.com/IndianRunners/DaudIndia/issues) so each one gets its own discussion. First ideas landing soon.
