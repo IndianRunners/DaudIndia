@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Race calendar sync - simulated demo</title>
+<style>
+  :root {
+    --paper: #faf6ef; --card: #ffffff; --ink: #1e1a17; --ink2: #6b6257;
+    --hairline: #e3dccb; --teal: #0e7c6b; --red: #b3261e; --amber-bg: #fdf3e0; --amber-line: #e8c97a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .sim-banner {
+    position: sticky; top: 0; z-index: 10; background: var(--ink); color: #f5edd8;
+    text-align: center; font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
+    padding: 7px 10px;
+  }
+  .page { max-width: 620px; margin: 0 auto; padding: 22px 16px 48px; }
+  .card { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; padding: 22px 20px; }
+  h1 { font-size: 24px; margin: 0 0 2px; }
+  .fact { color: var(--teal); font-weight: 600; font-size: 13.5px; margin-bottom: 8px; }
+  .intro { color: var(--ink2); font-size: 14.5px; margin: 0 0 16px; }
+  .callout {
+    border-radius: 10px; padding: 12px 14px; font-size: 13.5px; margin: 12px 0;
+  }
+  .callout.warn { background: var(--amber-bg); border: 1px solid var(--amber-line); }
+  .callout.note { background: #eef5f4; border: 1px solid #bcd8d2; }
+  .callout b { display: block; margin-bottom: 3px; }
+  .group { margin-top: 20px; }
+  .group-label { font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink2); font-weight: 700; }
+  .group h2 { font-size: 17px; margin: 2px 0 10px; }
+  .field { margin: 10px 0 14px; }
+  .field-label { display: block; font-size: 13px; color: var(--ink2); margin-bottom: 6px; }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice {
+    text-align: left; padding: 10px 14px; border-radius: 8px; font: inherit;
+    border: 1px solid var(--hairline); background: #fff; color: var(--ink); cursor: pointer;
+  }
+  .choice.on { border-color: var(--teal); outline: 2px solid var(--teal); font-weight: 600; }
+  input.text {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--hairline);
+    border-radius: 8px; font: inherit; background: #fff; color: var(--ink);
+  }
+  .btn {
+    display: inline-block; padding: 10px 16px; border-radius: 8px; font: inherit; font-weight: 600;
+    cursor: pointer; border: 1px solid transparent;
+  }
+  .btn.primary { background: var(--teal); color: #fff; }
+  .btn.secondary { background: #fff; color: var(--ink); border-color: var(--hairline); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .cal-event {
+    border: 1px solid var(--hairline); border-left: 5px solid var(--teal);
+    border-radius: 10px; padding: 14px 16px; background: #fff; margin: 8px 0;
+  }
+  .cal-title { font-weight: 600; font-size: 17px; }
+  .cal-when { color: var(--ink2); font-size: 13.5px; margin-bottom: 8px; }
+  .cal-event table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .cal-event td { padding: 3px 0; vertical-align: top; }
+  .cal-event td:first-child { color: var(--ink2); width: 110px; }
+  .old { color: var(--red); text-decoration: line-through; margin-right: 8px; }
+  .confirm-line { font-size: 14.5px; }
+  .reminders { font-size: 13.5px; color: var(--teal); font-weight: 600; }
+  .closing { color: var(--ink2); font-size: 13px; margin-top: 22px; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="sim-banner">SIMULATED DEMO &middot; FICTIONAL DATA &middot; NO LIVE INTEGRATION</div>
+<div class="page">
+  <div class="card">
+    <h1>Race calendar sync</h1>
+    <div class="fact">Simulated demo</div>
+    <p class="intro">Register for a race and it lands in your calendar, with updates when the organiser changes details. Everything below is fictional.</p>
+
+    <div class="callout warn">
+      <b>Simulated demo</b>
+      Fictional race, fictional organiser, no live race-platform integration. How fast a calendar app picks up
+      changes is controlled by the calendar app, not shown to scale here.
+    </div>
+
+    <div class="group" id="step1">
+      <div class="group-label">Step 1</div>
+      <h2>Register</h2>
+      <div class="field">
+        <span class="field-label">Race</span>
+        <div class="choices" id="raceChoices"></div>
+      </div>
+      <div class="field">
+        <span class="field-label">Your name</span>
+        <input class="text" id="nameInput" value="Demo Runner">
+      </div>
+      <button class="btn primary" id="registerBtn">Register</button>
+    </div>
+
+    <div class="group" id="step2" hidden>
+      <div class="group-label">Step 2</div>
+      <h2>In your calendar</h2>
+      <p class="confirm-line" id="confirmLine"></p>
+      <div id="card2"></div>
+      <p class="reminders">Reminders attached: 2 days before and 3 hours before start.</p>
+      <div class="btn-row">
+        <button class="btn primary" id="dlBtn">Add to my calendar (.ics)</button>
+        <button class="btn secondary" id="simulateBtn">Simulate organiser change</button>
+      </div>
+    </div>
+
+    <div class="group" id="step3" hidden>
+      <div class="group-label">Step 3</div>
+      <h2>Organiser updates</h2>
+      <p class="confirm-line">Reporting time moved earlier; gate changed. Below is a simulated preview of the revised entry a subscribed calendar feed would carry.</p>
+      <div id="card3"></div>
+      <p class="reminders">Reminders carry over unchanged.</p>
+      <div class="btn-row">
+        <button class="btn primary" id="dlUpdatedBtn">Download updated .ics</button>
+      </div>
+      <div class="callout note">
+        <b>How updates would reach a runner</b>
+        Through a subscribed calendar link, not a one-time download. Each calendar app re-checks the link on its
+        own schedule, and that delay is controlled by the app, so urgent same-day changes still need a direct
+        alert from the organiser. The feed marks each change with SEQUENCE and LAST-MODIFIED so apps can
+        recognise it as a revision of the same entry. Re-importing a downloaded file by hand may create a
+        duplicate instead of updating - the updating route is the subscription.
+      </div>
+    </div>
+
+    <p class="closing">Demo only. No real race data, no accounts, nothing leaves this page except the .ics file you choose to download.</p>
+  </div>
+</div>
+
+<script>
+/*
+ * race-calendar-export.js
+ * Original, dependency-free RFC 5545 (iCalendar) exporter for race lists.
+ * Accepts caller-supplied event data; ships with no race data of its own.
+ * Supports updatable feeds: stable UIDs, SEQUENCE, LAST-MODIFIED and
+ * refresh-interval hints, so an organiser can republish changed details
+ * (start time, gate, parking, venue) against the same event identity.
+ *
+ * Runs in the browser (window.RaceCalendarExport) and Node (module.exports).
+ * Licence: to be chosen by the project owner (unlicensed until then).
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === "object" && module.exports) { module.exports = api; }
+  else { root.RaceCalendarExport = api; }
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  var CRLF = "\r\n";
+
+  /* ---------- helpers ---------- */
+
+  function pad(n, w) {
+    var s = String(Math.abs(n));
+    while (s.length < w) s = "0" + s;
+    return (n < 0 ? "-" : "") + s;
+  }
+
+  // YYYYMMDD (local calendar date) for all-day events
+  function formatDate(d) {
+    return pad(d.getFullYear(), 4) + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2);
+  }
+
+  // YYYYMMDDTHHMMSSZ (UTC) for timed events
+  function formatDateTimeUTC(d) {
+    return pad(d.getUTCFullYear(), 4) + pad(d.getUTCMonth() + 1, 2) + pad(d.getUTCDate(), 2) +
+      "T" + pad(d.getUTCHours(), 2) + pad(d.getUTCMinutes(), 2) + pad(d.getUTCSeconds(), 2) + "Z";
+  }
+
+  // RFC 5545 §3.3.11 text escaping
+  function escapeText(s) {
+    return String(s)
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r\n/g, "\\n")
+      .replace(/\r/g, "\\n")
+      .replace(/\n/g, "\\n");
+  }
+
+  // RFC 5545 §3.1: content lines MUST NOT exceed 75 octets; fold with CRLF + single space.
+  // Folds by UTF-8 octets without splitting a multi-byte character.
+  function foldLine(line) {
+    var bytes = new TextEncoder().encode(line);
+    if (bytes.length <= 75) return line;
+    var out = [];
+    var chunk = "";
+    var chunkBytes = 0;
+    var limit = 75;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      var chBytes = new TextEncoder().encode(ch).length;
+      if (chunkBytes + chBytes > limit) {
+        out.push(chunk);
+        chunk = " " + ch;
+        chunkBytes = 1 + chBytes;
+        limit = 75;
+      } else {
+        chunk += ch;
+        chunkBytes += chBytes;
+      }
+    }
+    out.push(chunk);
+    return out.join(CRLF);
+  }
+
+  function line(name, params, value) {
+    var l = name;
+    if (params) l += ";" + params;
+    l += ":" + value;
+    return foldLine(l);
+  }
+
+  /*
+   * UID stability is what lets an updated feed revise an existing calendar
+   * entry instead of duplicating it. UIDs here are deterministic:
+   * - event.id supplied  -> "<id>@<domain>"
+   * - no event.id        -> hash of title|startDate|location (same input,
+   *                         same UID, so a regenerated feed still matches)
+   */
+  function uidFor(ev, productDomain) {
+    if (ev.id) return String(ev.id) + "@" + productDomain;
+    var basis = [ev.title, String(ev.startDate), ev.location || ""].join("|");
+    var hash = 0;
+    for (var i = 0; i < basis.length; i++) {
+      hash = ((hash << 5) - hash + basis.charCodeAt(i)) | 0;
+    }
+    return "race-" + (hash >>> 0).toString(36) + "@" + productDomain;
+  }
+
+  function toDate(v) {
+    if (v instanceof Date) return v;
+    var d = new Date(v);
+    if (isNaN(d.getTime())) throw new Error("Invalid date: " + v);
+    return d;
+  }
+
+  // Build the human-readable DESCRIPTION from the structured race fields.
+  function buildDescription(ev) {
+    var parts = [];
+    if (ev.category) parts.push("Category: " + ev.category);
+    if (ev.bib) parts.push("Bib: " + ev.bib);
+    if (ev.reportingTime) parts.push("Reporting time: " + ev.reportingTime);
+    if (ev.startGate) parts.push("Start gate: " + ev.startGate);
+    if (ev.parking) parts.push("Parking: " + ev.parking);
+    if (ev.description) parts.push(ev.description);
+    if (ev.updateNotice) parts.push("UPDATED: " + ev.updateNotice);
+    return parts.length ? parts.join("\n") : null;
+  }
+
+  /* ---------- public API ---------- */
+
+  /**
+   * buildICS(events, options) -> string (CRLF-delimited iCalendar)
+   *
+   * event = {
+   *   title:        string  (required)  race name
+   *   startDate:    Date | "YYYY-MM-DD" | ISO (required)  race start
+   *   endDate:      same, optional (defaults: +1 day all-day, +2h timed)
+   *   allDay:       boolean (default: true when startDate has no time part)
+   *   location:     string  optional, venue
+   *   description:  string  optional free text
+   *   url:          string  optional, race website
+   *   id:           string  optional stable id (recommended for updatable feeds)
+   *   sequence:     integer optional revision number, default 0; bump on every
+   *                 change so calendar apps replace the old entry
+   *   lastModified: Date | ISO optional; defaults to generation time
+   *   category:     string  optional, e.g. "Half Marathon - Open 18-35"
+   *   bib:          string  optional, runner's bib number
+   *   reportingTime:string  optional, e.g. "05:15 at Gate B"
+   *   startGate:    string  optional, exact gate / corral
+   *   parking:      string  optional, parking instructions
+   *   geo:          {lat, lon} optional venue/parking coordinates (GEO property)
+   *   updateNotice: string  optional, highlights what changed in this revision
+   *   reminders:    array of { days?, hours?, minutes? } before start
+   * }
+   *
+   * options = {
+   *   calendarName:    string (X-WR-CALNAME), default "Race Calendar"
+   *   productId:       string (UID domain part), default "daudindia.github.io"
+   *   refreshInterval: string ISO-8601 duration, e.g. "PT6H". Emits
+   *                    REFRESH-INTERVAL and X-PUBLISHED-TTL hints for feed use.
+   *                    (Calendar apps may ignore these; they are hints only.)
+   * }
+   */
+  function buildICS(events, options) {
+    options = options || {};
+    var domain = options.productId || "daudindia.github.io";
+    var calName = options.calendarName || "Race Calendar";
+    var now = formatDateTimeUTC(new Date());
+
+    var lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      line("PRODID", null, "-//DaudIndia//Race Calendar Export//EN"),
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      line("X-WR-CALNAME", null, escapeText(calName))
+    ];
+    if (options.refreshInterval) {
+      lines.push(line("REFRESH-INTERVAL", "VALUE=DURATION", options.refreshInterval));
+      lines.push(line("X-PUBLISHED-TTL", null, options.refreshInterval));
+    }
+
+    events.forEach(function (ev) {
+      if (!ev || !ev.title) throw new Error("Every event needs a title");
+      if (!ev.startDate) throw new Error("Every event needs a startDate");
+
+      var start = toDate(ev.startDate);
+      var allDay = ev.allDay !== undefined ? !!ev.allDay
+        : (typeof ev.startDate === "string" && !/T|\d:\d/.test(ev.startDate));
+
+      lines.push("BEGIN:VEVENT");
+      lines.push(line("UID", null, uidFor(ev, domain)));
+      lines.push(line("DTSTAMP", null, now));
+      lines.push(line("SEQUENCE", null, String(ev.sequence || 0)));
+      lines.push(line("LAST-MODIFIED", null,
+        ev.lastModified ? formatDateTimeUTC(toDate(ev.lastModified)) : now));
+      if (allDay) {
+        var end = ev.endDate ? toDate(ev.endDate)
+          : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+        lines.push(line("DTSTART", "VALUE=DATE", formatDate(start)));
+        lines.push(line("DTEND", "VALUE=DATE", formatDate(end)));
+      } else {
+        var endT = ev.endDate ? toDate(ev.endDate)
+          : new Date(start.getTime() + 2 * 3600 * 1000);
+        lines.push(line("DTSTART", null, formatDateTimeUTC(start)));
+        lines.push(line("DTEND", null, formatDateTimeUTC(endT)));
+      }
+      lines.push(line("SUMMARY", null, escapeText(ev.title)));
+      if (ev.location) lines.push(line("LOCATION", null, escapeText(ev.location)));
+      var desc = buildDescription(ev);
+      if (desc) lines.push(line("DESCRIPTION", null, escapeText(desc)));
+      if (ev.url) lines.push(line("URL", null, ev.url));
+      if (ev.geo && typeof ev.geo.lat === "number" && typeof ev.geo.lon === "number") {
+        lines.push(line("GEO", null, ev.geo.lat + ";" + ev.geo.lon));
+      }
+
+      (ev.reminders || []).forEach(function (r) {
+        var trig = "-P";
+        if (r.days) trig += r.days + "D";
+        if (r.hours || r.minutes) {
+          trig += "T";
+          if (r.hours) trig += r.hours + "H";
+          if (r.minutes) trig += r.minutes + "M";
+        }
+        if (trig === "-P") trig = "-PT15M";
+        lines.push("BEGIN:VALARM");
+        lines.push("ACTION:DISPLAY");
+        lines.push(line("TRIGGER", null, trig));
+        lines.push(line("DESCRIPTION", null, escapeText(ev.title)));
+        lines.push("END:VALARM");
+      });
+
+      lines.push("END:VEVENT");
+    });
+
+    lines.push("END:VCALENDAR");
+    return lines.join(CRLF) + CRLF;
+  }
+
+  /** Browser convenience: trigger a .ics download. */
+  function downloadICS(filename, icsText) {
+    var blob = new Blob([icsText], { type: "text/calendar;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 0);
+  }
+
+  return { buildICS: buildICS, downloadICS: downloadICS };
+});
+
+</script>
+<script>
+(function () {
+  "use strict";
+  var RCE = window.RaceCalendarExport;
+
+  var RACES = {
+    demo10k: {
+      title: "Demo City 10K", when: "Sun 7 Feb 2027", dateLabel: "2027-02-07",
+      location: "Sample Nagar, Pune", parking: "North lot, FC Road side",
+      reporting: "06:00 IST", gate: "Gate A", category: "10K Open",
+      newReporting: "05:30 IST", newGate: "Gate B",
+      url: "https://example.invalid/demo10k", lat: 18.5204, lon: 73.8567,
+      start: new Date(Date.UTC(2027, 1, 7, 1, 30, 0)) // 07:00 IST
+    },
+    hills21k: {
+      title: "Fictional Hills Half Marathon", when: "Sun 14 Mar 2027", dateLabel: "2027-03-14",
+      location: "Example Valley, Lonavala", parking: "Base ground parking",
+      reporting: "05:30 IST", gate: "Start corral 1", category: "Half Marathon Open",
+      newReporting: "05:00 IST", newGate: "Start corral 2",
+      url: "https://example.invalid/hills21k", lat: 18.7548, lon: 73.4062,
+      start: new Date(Date.UTC(2027, 2, 14, 1, 30, 0)) // 07:00 IST
+    }
+  };
+
+  var state = { raceKey: "demo10k", bib: "", updated: false };
+
+  function makeEv(upd) {
+    var race = RACES[state.raceKey];
+    return {
+      title: race.title,
+      startDate: race.start,
+      allDay: false,
+      id: "reg-" + state.bib,
+      category: race.category,
+      bib: state.bib,
+      reportingTime: upd ? race.newReporting : race.reporting,
+      startGate: upd ? race.newGate : race.gate,
+      location: race.location,
+      parking: race.parking,
+      url: race.url,
+      geo: { lat: race.lat, lon: race.lon },
+      sequence: upd ? 1 : 0,
+      reminders: [{ days: 2 }, { hours: 3 }],
+      updateNotice: upd
+        ? "Reporting time moved from " + race.reporting + " to " + race.newReporting + "; start gate moved to " + race.newGate
+        : undefined
+    };
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function eventCardHtml(ev, updated) {
+    var race = RACES[state.raceKey];
+    var reporting = updated
+      ? '<span class="old">' + escHtml(race.reporting) + "</span>" + escHtml(ev.reportingTime)
+      : escHtml(ev.reportingTime);
+    var gate = updated
+      ? '<span class="old">' + escHtml(race.gate) + "</span>" + escHtml(ev.startGate)
+      : escHtml(ev.startGate);
+    return '<div class="cal-event">' +
+      '<div class="cal-title">' + escHtml(ev.title) + "</div>" +
+      '<div class="cal-when">' + race.dateLabel + " &middot; starts 07:00 IST</div>" +
+      "<table><tbody>" +
+      "<tr><td>Reporting</td><td>" + reporting + "</td></tr>" +
+      "<tr><td>Start gate</td><td>" + gate + "</td></tr>" +
+      "<tr><td>Category</td><td>" + escHtml(ev.category) + "</td></tr>" +
+      "<tr><td>Bib</td><td>" + escHtml(ev.bib) + "</td></tr>" +
+      "<tr><td>Venue</td><td>" + escHtml(ev.location) + "</td></tr>" +
+      "<tr><td>Parking</td><td>" + escHtml(ev.parking) + "</td></tr>" +
+      "</tbody></table></div>";
+  }
+
+  function render() {
+    var choices = document.getElementById("raceChoices");
+    choices.innerHTML = "";
+    Object.keys(RACES).forEach(function (k) {
+      var b = document.createElement("button");
+      b.className = "choice" + (state.raceKey === k ? " on" : "");
+      b.textContent = RACES[k].title + " \u00b7 " + RACES[k].when;
+      b.onclick = function () { state.raceKey = k; state.bib = ""; state.updated = false; render(); };
+      choices.appendChild(b);
+    });
+
+    var step2 = document.getElementById("step2");
+    var step3 = document.getElementById("step3");
+    if (!state.bib) { step2.hidden = true; step3.hidden = true; return; }
+
+    var name = document.getElementById("nameInput").value || "Demo Runner";
+    var ev = makeEv(false);
+    step2.hidden = false;
+    document.getElementById("confirmLine").innerHTML =
+      "Registration confirmed (simulated). Bib <b>" + escHtml(ev.bib) + "</b> &middot; " +
+      escHtml(ev.category) + " &middot; " + escHtml(name);
+    document.getElementById("card2").innerHTML = eventCardHtml(ev, false);
+
+    step3.hidden = !state.updated;
+    if (state.updated) {
+      document.getElementById("card3").innerHTML = eventCardHtml(makeEv(true), true);
+    }
+  }
+
+  document.getElementById("registerBtn").onclick = function () {
+    state.bib = "D" + (1000 + Math.floor(Math.random() * 9000));
+    state.updated = false;
+    render();
+  };
+  document.getElementById("simulateBtn").onclick = function () {
+    state.updated = true;
+    render();
+  };
+  document.getElementById("dlBtn").onclick = function () {
+    RCE.downloadICS("my-race.ics", RCE.buildICS([makeEv(false)], {
+      calendarName: "My Race - " + RACES[state.raceKey].title, refreshInterval: "PT6H"
+    }));
+  };
+  document.getElementById("dlUpdatedBtn").onclick = function () {
+    RCE.downloadICS("my-race-updated.ics", RCE.buildICS([makeEv(true)], {
+      calendarName: "My Race - " + RACES[state.raceKey].title, refreshInterval: "PT6H"
+    }));
+  };
+  document.getElementById("nameInput").oninput = function () { if (state.bib) render(); };
+
+  // Deterministic stages for review/screenshots: ?stage=2 pre-registers, ?stage=3 also applies the change.
+  var stage = new URLSearchParams(location.search).get("stage");
+  if (stage === "2" || stage === "3") {
+    state.bib = "D4269";
+    state.updated = stage === "3";
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
