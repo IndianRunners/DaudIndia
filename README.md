@@ -6,6 +6,8 @@
 
 Open-source ideas from Indian runners, for Indian runners.
 
+**Live site: [daudindia.vercel.app](https://daudindia.vercel.app) - encyclopedia, glossary, race calendar and tools.**
+
 </div>
 
 DaudIndia is the ideas hub of IndianRunners: open-source apps, tools and experiments for runners in India. Everything here starts as an idea, clearly marked, until someone builds it.
